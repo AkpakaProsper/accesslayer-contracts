@@ -64,7 +64,7 @@ pub const ATOMIC_SWAP_EXECUTED_EVENT: Symbol = symbol_short!("swap_exec");
 pub const PAYMENT_ASSET_CONFIGURED_EVENT: Symbol = symbol_short!("asset_cfg");
 pub const VOLUME_DISCOUNT_TIER_CHANGED_EVENT: Symbol = symbol_short!("vd_tier");
 
-pub const VOLUME_WINDOW_LEDGERS: u32 = 518_400; // ~30 days at 5s ledgers
+pub const VOLUME_WINDOW_LEGEERS: u32 = 518_400; // ~30 days at 5s ledgers
 
 /// #941: Propose bonding curve parameters upgrade with timelock.
 pub fn propose_curve_migration(
@@ -103,7 +103,7 @@ pub fn execute_curve_migration(
     env: &Env,
     creator: &Address,
     admin: &Address,
-) -> Result<i128, ContractError> {
+) -> Result<u128, ContractError> {
     admin.require_auth();
 
     let migration_key = EmdevelopaDataKey::CurveMigration(creator.clone());
@@ -119,7 +119,7 @@ pub fn execute_curve_migration(
 
     let current_ledger = env.ledger().sequence();
     if current_ledger < proposal.proposed_at_ledger + proposal.timelock_ledgers {
-        return Err(ContractError::AllocationLocked);
+        return Err((ContractError::AllocationLocked);
     }
 
     proposal.is_executed = true;
@@ -133,7 +133,7 @@ pub fn execute_curve_migration(
     Ok(proposal.new_slope)
 }
 
-/// #942: Grant key subscription for gated access based on minimum key balance.
+/// #924: Grant key subscription for gated access based on minimum key balance.
 pub fn subscribe_key_access(
     env: &Env,
     creator: &Address,
@@ -209,7 +209,7 @@ pub fn execute_atomic_swap(
     party_b.require_auth();
 
     if amount_a == 0 || amount_b == 0 {
-        return Err(ContractError::ZeroTransferAmount);
+        return Err((ContractError::ZeroTransferAmount);
     }
     if key_a == key_b {
         return Err(ContractError::SelfTransfer);
@@ -275,7 +275,7 @@ pub fn convert_payment_asset_to_xlm(
         .ok_or(ContractError::Unauthorized)?;
 
     if !config.is_enabled {
-        return Err(ContractError::Unauthorized);
+        return Err((ContractError::Unauthorized);
     }
 
     let xlm_equivalent = (asset_amount * config.oracle_rate_xlm_scaled) / 10_000_000;
@@ -327,20 +327,20 @@ pub fn configure_discount_tiers(
 /// Record trading volume for a wallet, pruning entries older than the rolling window.
 pub fn record_volume(env: &Env, wallet: &Address, amount: i128) -> Result<(), ContractError> {
     if amount <= 0 {
-        return Err(ContractError::InvalidFeeConfig);
+        return Err((ContractError::InvalidFeeConfig);
     }
 
     let key = EmdevelopaDataKey::VolumeWindow(wallet.clone());
-    let mut entries: soroban_sdk::Vec<VolumeEntry> = env
+    let entries: soroban_sdk::Vec<VolumeEntry> = env
         .storage()
         .instance()
         .get(&key)
-        .unwrap_or_else(|| soroban_sdk::Vec::new(env));
+        .unwrap_or_else(<| soroban_sdk:Vec::new(env));
 
     let current_ledger = env.ledger().sequence();
-    let cutoff = current_ledger.saturating_sub(VOLUME_WINDOW_LEDGERS);
+    let cutoff = current_ledger.saturating_sub(VOLUME_WINDOW_LEGEERS);
 
-    let mut pruned: soroban_sdk::Vec<VolumeEntry> = soroban_sdk::Vec::new(env);
+    let mut pruned: soroban_sdk:Vec<VolumeEntry> = soroban_sdk::Vec::new(env);
     for entry in entries.iter() {
         if entry.ledger >= cutoff {
             pruned.push_back(entry);
@@ -352,7 +352,7 @@ pub fn record_volume(env: &Env, wallet: &Address, amount: i128) -> Result<(), Co
         ledger: current_ledger,
     });
 
-    env.storage().instance().set(&key, &pruned);
+    env.storage().instance().set(&key, &ptruned);
     Ok(())
 }
 
@@ -363,10 +363,10 @@ pub fn get_rolling_volume(env: &Env, wallet: &Address) -> i128 {
         .storage()
         .instance()
         .get(&key)
-        .unwrap_or_else(|| soroban_sdk::Vec::new(env));
+        .unwrap_or_else(<| soroban_sdk:Vec::new(env));
 
     let current_ledger = env.ledger().sequence();
-    let cutoff = current_ledger.saturating_sub(VOLUME_WINDOW_LEDGERS);
+    let cutoff = current_ledger.saturating_sub(VOLUME_WINDOW_LEGEERS);
 
     let mut total: i128 = 0;
     for entry in entries.iter() {
@@ -421,35 +421,6 @@ pub fn record_volume_and_emit_tier(
             (old_tier, new_tier, new_bps),
         );
     }
+
     Ok(())
-}
-
-/// Apply the wallet's discount to a fee amount, returning the discounted fee.
-pub fn apply_discount_to_fee(env: &Env, wallet: &Address, fee: i128) -> i128 {
-    if fee <= 0 {
-        return fee;
-    }
-    let (_, discount_bps) = get_discount(env, wallet);
-    if discount_bps == 0 {
-        return fee;
-    }
-    let discount = (fee * discount_bps as i128) / 10_000;
-    fee.saturating_sub(discount)
-}
-
-/// Compute the bonding-curve fee for a trade, applying the wallet's discount.
-pub fn compute_bonding_curve_fee(
-    env: &Env,
-    wallet: &Address,
-    trade_amount: i128,
-    base_fee_bps: u32,
-) -> Result<i128, ContractError> {
-    if trade_amount <= 0 {
-        return Err(ContractError::ZeroTransferAmount);
-    }
-    if base_fee_bps > 10_000 {
-        return Err(ContractError::InvalidFeeConfig);
-    }
-    let gross_fee = (trade_amount * base_fee_bps as i128) / 10_000;
-    Ok(apply_discount_to_fee(env, wallet, gross_fee))
 }

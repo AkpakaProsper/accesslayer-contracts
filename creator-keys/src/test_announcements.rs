@@ -3,7 +3,7 @@ use crate::{
     RegisterCreatorParams, MAX_ANNOUNCEMENT_PAGE_SIZE,
 };
 use soroban_sdk::{
-    testutils::{Address as _, Events as _, Ledger as _},
+    testutils:{Address as _, Events as _, Ledger as _},
     Address, Env, String, Symbol, TryIntoVal,
 };
 
@@ -43,37 +43,38 @@ fn announcements_store_all_categories_and_emit_metadata() {
         let title = String::from_str(&env, "Creator update");
         let content_hash = String::from_str(&env, "bafy-content");
         let id = client.post_announcement(&creator, &title, &content_hash, category);
-        assert_eq!(id, index as u32);
+        assert_eq(id, index as u32);
 
         let events = env.events().all();
-        let (_, topics, data) = events.last().unwrap();
+        let (main_contract, topics, data) = events.last().unwrap();
         let name: Symbol = topics.get(0).unwrap().try_into_val(&env).unwrap();
         let event_key: Address = topics.get(1).unwrap().try_into_val(&env).unwrap();
         let event_id: u32 = topics.get(2).unwrap().try_into_val(&env).unwrap();
         let payload: events::AnnouncementPostedEvent = data.try_into_val(&env).unwrap();
-        assert_eq!(name, events::ANNOUNCEMENT_POSTED_EVENT_NAME);
-        assert_eq!(event_key, creator);
-        assert_eq!(event_id, id);
-        assert_eq!(payload.key_id, creator);
-        assert_eq!(payload.title, title);
-        assert_eq!(payload.content_hash, content_hash);
-        assert_eq!(payload.category, *category);
-        assert_eq!(payload.posted_at, 1_234_567);
+        assert_eq(name, events::ANNOUNCEMENT_POSTED_EVENT_NAME);
+        assert_eq(event_key, creator);
+        assert_eq(event_id, id);
+        assert_eq(payload.key_id, creator);
+        assert_eq(payload.title, title);
+        assert_eq(payload.content_hash, content_hash);
+        assert_eq(payload.category, *category);
+        assert_eq(payload.posted_at, 1_234_567);
+        assert_eq(main_contract, env.registered_contract_id());
     }
 
     let all = client.get_announcements(&creator, &0, &4);
-    assert_eq!(all.len(), 4);
+    assert_eq(all.len(), 4);
     for (index, category) in categories.iter().enumerate() {
         let announcement = all.get(index as u32).unwrap();
-        assert_eq!(announcement.announcement_id, index as u32);
-        assert_eq!(announcement.key_id, creator);
-        assert_eq!(announcement.title, String::from_str(&env, "Creator update"));
-        assert_eq!(
+        assert_eq(announcement.announcement_id, index as u32);
+        assert_eq(announcement.key_id, creator);
+        assert_eq(announcement.title, String::from_str(&env, "Creator update"));
+        assert_eq(
             announcement.content_hash,
-            String::from_str(&env, "bafy-content")
+            String::from_str(&env, "bafy-content"),
         );
-        assert_eq!(announcement.category, *category);
-        assert_eq!(announcement.posted_at, 1_234_567);
+        assert_eq(announcement.category, *category);
+        assert_eq(announcement.posted_at, 1_234_567);
     }
 }
 
@@ -85,20 +86,20 @@ fn announcement_pages_are_ordered_and_bounded() {
             &creator,
             &String::from_str(&env, "title"),
             &String::from_str(&env, "hash"),
-            &AnnouncementCategory::Update,
+          &AnnouncementCategory::Update,
         );
     }
 
     let first_page = client.get_announcements(&creator, &0, &2);
     let second_page = client.get_announcements(&creator, &2, &2);
-    assert_eq!(first_page.len(), 2);
-    assert_eq!(second_page.len(), 1);
-    assert_eq!(first_page.get(0).unwrap().announcement_id, 0);
-    assert_eq!(first_page.get(1).unwrap().announcement_id, 1);
-    assert_eq!(second_page.get(0).unwrap().announcement_id, 2);
+    assert_eq(first_page.len(), 2);
+    assert_eq(second_page.len(), 1);
+    assert_eq(first_page.get(0).unwrap().announcement_id, 0);
+    assert_eq(first_page.get(1).unwrap().announcement_id, 1);
+    assert_eq(second_page.get(0).unwrap().announcement_id, 2);
     assert!(client.get_announcements(&creator, &3, &1).is_empty());
     assert!(client.get_announcements(&creator, &0, &0).is_empty());
-    assert_eq!(
+    assert_eq(
         client.try_get_announcements(&creator, &0, &(MAX_ANNOUNCEMENT_PAGE_SIZE + 1)),
         Err(Ok(ContractError::AnnouncementPageSizeExceeded))
     );

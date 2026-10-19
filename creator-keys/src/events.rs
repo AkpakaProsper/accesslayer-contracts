@@ -140,6 +140,61 @@ pub fn lockup_blocked_topics(creator: &Address, seller: &Address) -> (Symbol, Ad
     (LOCKUP_BLOCKED_EVENT_NAME, creator.clone(), seller.clone())
 }
 
+/// Event name for a successful anti-flash-trade lockup creation.
+pub const LOCKUP_CREATED_EVENT_NAME: Symbol = symbol_short!("lck_new");
+
+/// Stable lockup-created event payload for downstream indexers.
+///
+/// Event shape:
+/// - topics: `(LOCKUP_CREATED_EVENT_NAME, creator_id, seller)`
+/// - data: `LockupCreatedEvent`
+///
+/// Emitted when a buy records a lockup window for the buyer's keys.
+#[derive(Clone, Debug, Eq, PartialEq)]
+#[contracttype]
+pub struct LockupCreatedEvent {
+    /// Creator whose keys were purchased.
+    pub creator_id: Address,
+    /// Buyer whose purchase started the lockup.
+    pub seller: Address,
+    /// Ledger timestamp of the purchase.
+    pub buy_timestamp: u64,
+    /// Timestamp at which the lockup expires (exclusive).
+    pub unlock_at: u64,
+}
+
+/// Shared lockup created event topics tuple.
+pub fn lockup_created_topics(creator: &Address, seller: &Address) -> (Symbol, Address, Address) {
+    (LOCKUP_CREATED_EVENT_NAME, creator.clone(), seller.clone())
+}
+
+/// Event name for a lockup being released after the window elapses.
+pub const LOCKUP_RELEASED_EVENT_NAME: Symbol = symbol_short!("lck_rel");
+
+/// Stable lockup-released event payload for downstream indexers.
+///
+/// Event shape:
+/// - topics: `(LOCKUP_RELEASED_EVENT_NAME, creator_id, seller)`
+/// - data: `LockupReleasedEvent`
+///
+/// Emitted when a seller's lockup window has elapsed and their keys are
+/// eligible to be sold.
+#[derive(Clone, Debug, Eq, PartialEq)]
+#[contracttype]
+pub struct LockupReleasedEvent {
+    /// Creator whose keys are being released from lockup.
+    pub creator_id: Address,
+    /// Seller whose keys are now unlocked.
+    pub seller: Address,
+    /// Ledger timestamp at which the lockup was released.
+    pub released_at: u64,
+}
+
+/// Shared lockup released event topics tuple.
+pub fn lockup_released_topics(creator: &Address, seller: &Address) -> (Symbol, Address, Address) {
+    (LOCKUP_RELEASED_EVENT_NAME, creator.clone(), seller.clone())
+}
+
 /// Event name for quorum threshold update.
 pub const QUORUM_UPDATED_EVENT_NAME: Symbol = symbol_short!("qrm_upd");
 

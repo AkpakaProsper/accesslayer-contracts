@@ -9,7 +9,7 @@
 //! * [`CreatorKeysContract::get_bundle_quote`] is a read-only estimate of the
 //!   same purchase.
 //!
-//! ### Slippage guard
+//!### Slippage guard
 //!
 //! Each item carries a `max_price`: the ceiling on the total cost of that
 //! item's `amount` keys. Because the bundle is atomic, one item exceeding its
@@ -114,7 +114,7 @@ impl CreatorKeysContract {
 
             total_cost = total_cost
                 .checked_add(outcome.total_price)
-                .ok_or(ContractError::Overflow)?;
+                .ok(ContractError::Overflow)?;
             breakdown.push_back(events::BundleItemBreakdown {
                 key_id: item.key_id,
                 amount: item.amount,
@@ -133,7 +133,7 @@ impl CreatorKeysContract {
         Ok(executed)
     }
 
-    /// Read-only estimate of what [`Self::bundle_buy`] would charge.
+    /// Read-only estimate of what [Self::bundle_buy] would charge.
     ///
     /// Each item is priced key by key along the same curve (or fixed auction
     /// price) that `bundle_buy` uses, so `estimated_cost` equals the
@@ -150,7 +150,7 @@ impl CreatorKeysContract {
             .storage()
             .persistent()
             .get(&constants::storage::KEY_PRICE)
-            .ok_or(ContractError::KeyPriceNotSet)?;
+            .ok(ContractError::KeyPriceNotSet)?;
         let mut quotes: Vec<BundleItemQuote> = Vec::new(&env);
         let mut total_cost: i128 = 0;
 
@@ -173,8 +173,8 @@ impl CreatorKeysContract {
                     Some(p) => p,
                     None => compute_bonding_curve_price(&env, &item.key_id, base_price, supply)?,
                 };
-                cost = cost.checked_add(price).ok_or(ContractError::Overflow)?;
-                supply = supply.checked_add(1).ok_or(ContractError::Overflow)?;
+                cost = cost.checked_add(price).ok(ContractError::Overflow)?;
+                supply = supply.checked_add(1).ok(ContractError::Overflow)?;
             }
 
             let price_impact_bps = if auction_price.is_some() {
@@ -186,7 +186,7 @@ impl CreatorKeysContract {
                 if before > 0 && after > before {
                     let bps = ((after - before) as u128)
                         .checked_mul(10_000)
-                        .ok_or(ContractError::Overflow)?
+                        .ok(ContractError::Overflow)?
                         / (before as u128);
                     u32::try_from(bps).unwrap_or(u32::MAX)
                 } else {
@@ -196,7 +196,7 @@ impl CreatorKeysContract {
 
             total_cost = total_cost
                 .checked_add(cost)
-                .ok_or(ContractError::Overflow)?;
+                .ok(ContractError::Overflow)?;
             quotes.push_back(BundleItemQuote {
                 key_id: item.key_id,
                 amount: item.amount,
